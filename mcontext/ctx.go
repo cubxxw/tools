@@ -17,8 +17,8 @@ package mcontext
 import (
 	"context"
 
-	"github.com/OpenIMSDK/protocol/constant"
-	"github.com/OpenIMSDK/tools/errs"
+	"github.com/openimsdk/protocol/constant"
+	"github.com/openimsdk/tools/errs"
 )
 
 var mapper = []string{constant.OperationID, constant.OpUserID, constant.OpUserPlatform, constant.ConnID}
@@ -116,17 +116,17 @@ func GetRemoteAddr(ctx context.Context) string {
 func GetMustCtxInfo(ctx context.Context) (operationID, opUserID, platform, connID string, err error) {
 	operationID, ok := ctx.Value(constant.OperationID).(string)
 	if !ok {
-		err = errs.ErrArgs.Wrap("ctx missing operationID")
+		err = errs.ErrArgs.WrapMsg("ctx missing operationID")
 		return
 	}
 	opUserID, ok1 := ctx.Value(constant.OpUserID).(string)
 	if !ok1 {
-		err = errs.ErrArgs.Wrap("ctx missing opUserID")
+		err = errs.ErrArgs.WrapMsg("ctx missing opUserID")
 		return
 	}
 	platform, ok2 := ctx.Value(constant.OpUserPlatform).(string)
 	if !ok2 {
-		err = errs.ErrArgs.Wrap("ctx missing platform")
+		err = errs.ErrArgs.WrapMsg("ctx missing platform")
 		return
 	}
 	connID, _ = ctx.Value(constant.ConnID).(string)
@@ -136,7 +136,7 @@ func GetMustCtxInfo(ctx context.Context) (operationID, opUserID, platform, connI
 func GetCtxInfos(ctx context.Context) (operationID, opUserID, platform, connID string, err error) {
 	operationID, ok := ctx.Value(constant.OperationID).(string)
 	if !ok {
-		err = errs.ErrArgs.Wrap("ctx missing operationID")
+		err = errs.ErrArgs.WrapMsg("ctx missing operationID")
 		return
 	}
 	opUserID, _ = ctx.Value(constant.OpUserID).(string)
