@@ -18,8 +18,7 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
-
-	"github.com/OpenIMSDK/protocol/constant"
+	"github.com/openimsdk/protocol/constant"
 )
 
 var secret = "OpenIM_server"
@@ -39,7 +38,7 @@ func Test_ParseToken(t *testing.T) {
 }
 
 func secretFun() jwt.Keyfunc {
-	return func(token *jwt.Token) (interface{}, error) {
+	return func(token *jwt.Token) (any, error) {
 		return []byte(secret), nil
 	}
 }

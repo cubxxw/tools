@@ -15,9 +15,12 @@
 package apiresp
 
 import (
+	"encoding/json"
+	"errors"
 	"reflect"
 
-	"github.com/OpenIMSDK/tools/errs"
+	"github.com/openimsdk/tools/errs"
+	"github.com/openimsdk/tools/utils/jsonutil"
 )
 
 type ApiResponse struct {
@@ -27,12 +30,32 @@ type ApiResponse struct {
 	Data    any    `json:"data,omitempty"`
 }
 
+func (r *ApiResponse) MarshalJSON() ([]byte, error) {
+	type apiResponse ApiResponse
+	tmp := (*apiResponse)(r)
+	if tmp.Data != nil {
+		if format, ok := tmp.Data.(ApiFormat); ok {
+			format.ApiFormat()
+		}
+		if isAllFieldsPrivate(tmp.Data) {
+			tmp.Data = nil
+		} else {
+			data, err := jsonutil.JsonMarshal(tmp.Data)
+			if err != nil {
+				return nil, err
+			}
+			tmp.Data = json.RawMessage(data)
+		}
+	}
+	return jsonutil.JsonMarshal(tmp)
+}
+
 func isAllFieldsPrivate(v any) bool {
 	typeOf := reflect.TypeOf(v)
 	if typeOf == nil {
 		return false
 	}
-	if typeOf.Kind() == reflect.Ptr {
+	for typeOf.Kind() == reflect.Ptr {
 		typeOf = typeOf.Elem()
 	}
 	if typeOf.Kind() != reflect.Struct {
@@ -49,28 +72,20 @@ func isAllFieldsPrivate(v any) bool {
 }
 
 func ApiSuccess(data any) *ApiResponse {
-	if format, ok := data.(ApiFormat); ok {
-		format.ApiFormat()
-	}
-	if isAllFieldsPrivate(data) {
-		return &ApiResponse{}
-	}
-	return &ApiResponse{
-		Data: data,
-	}
+	return &ApiResponse{Data: data}
 }
 
 func ParseError(err error) *ApiResponse {
 	if err == nil {
 		return ApiSuccess(nil)
 	}
-	unwrap := errs.Unwrap(err)
-	if codeErr, ok := unwrap.(errs.CodeError); ok {
-		resp := ApiResponse{ErrCode: codeErr.Code(), ErrMsg: codeErr.Msg(), ErrDlt: codeErr.Detail()}
-		if resp.ErrDlt == "" {
-			resp.ErrDlt = err.Error()
-		}
-		return &resp
+	var codeErr errs.CodeError
+	if errors.As(err, &codeErr) {
+		//resp := ApiResponse{ErrCode: codeErr.Code(), ErrMsg: codeErr.Msg(), ErrDlt: codeErr.Detail()}
+		//if resp.ErrDlt == "" {
+		//	resp.ErrDlt = err.Error()
+		//}
+		return &ApiResponse{ErrCode: codeErr.Code(), ErrMsg: codeErr.Msg(), ErrDlt: codeErr.Detail()}
 	}
-	return &ApiResponse{ErrCode: errs.ServerInternalError, ErrMsg: err.Error()}
+	return &ApiResponse{ErrCode: errs.ServerInternalError, ErrMsg: errs.Unwrap(err).Error()}
 }
